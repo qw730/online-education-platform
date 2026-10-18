@@ -310,6 +310,22 @@ cd backend
 
 No MySQL server is required for the tests. **Status: 20 tests, 0 failures.**
 
+### Continuous integration
+
+Two GitHub Actions workflows live in `.github/workflows/`:
+
+| Workflow | Trigger | What it does |
+| -------- | ------- | ------------ |
+| `ci.yml` | every push / pull request on `main` | runs the backend tests on JDK 17, packages the jar, installs the frontend from `package-lock.json` (Node 20) and builds it with Vite; both bundles are kept as workflow artifacts for 14 days |
+| `release.yml` | pushing a tag like `v1.0.0`, or manually with a tag name | runs the full build and tests, then publishes a GitHub Release with `online-education-platform-<tag>.jar` and `frontend-dist-<tag>.zip` attached |
+
+Cutting a release therefore only takes a tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ---
 
 ## 6. REST API
