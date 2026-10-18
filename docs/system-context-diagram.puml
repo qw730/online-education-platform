@@ -1,0 +1,27 @@
+@startuml System_Context_Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context Diagram — Online Personal Education Platform
+
+Person(student, "Student", "Role.STUDENT. Browses the catalogue, enrols, studies, takes quizzes.")
+Person(admin, "Administrator", "Role.ADMIN. Authors courses, chapters, quizzes and categories.")
+
+System_Boundary(platform, "Online Personal Education Platform") {
+    Container(spa, "Frontend SPA", "Vue 3, Vite, Element Plus, Pinia", "Single page application on :5173.")
+    Container(api, "Backend service", "Spring Boot 3.3, Spring Data JPA, JJWT", "REST API on :8080, guarded by a JWT interceptor.")
+    Rel(spa, api, "Calls", "JSON over HTTP /api")
+}
+
+System_Ext(browser, "Web browser", "Hosts and renders the single page application.")
+System_Ext(mysql, "MySQL 8 server", "localhost:3306, database online_education, 12 tables. Only runtime third-party dependency.")
+
+Rel(student, platform, "learns", "HTTPS")
+Rel(admin, platform, "manages", "HTTPS")
+Rel(browser, platform, "renders")
+Rel(platform, mysql, "Reads and writes entities", "JDBC / JPA, TCP 3306")
+
+' Build-time only: Maven Central, npm registry. Test scope only: H2 in-memory.
+' Out of scope: email/SMS, payments, file uploads, cache or broker, external identity provider.
+
+UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+@enduml

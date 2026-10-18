@@ -1,0 +1,31 @@
+{
+  "folders": [
+    {
+      "name": "Backend (Spring Boot)",
+      "path": "backend"
+    },
+    {
+      "name": "Frontend (Vue 3)",
+      "path": "frontend"
+    },
+    {
+      "name": "SQL & Docs",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "java.jdt.ls.java.home": "D:\\Java\\jdk-22",
+    "files.exclude": {
+      "**/target": true,
+      "**/node_modules": true,
+      "**/dist": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "vscjava.vscode-java-pack",
+      "vmware.vscode-boot-dev-pack",
+      "vue.volar"
+    ]
+  }
+}

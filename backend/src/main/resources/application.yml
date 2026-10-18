@@ -1,0 +1,58 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: online-education-platform
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:online_education}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: ${DB_USERNAME:root}
+    # No default password is committed. Provide it locally via the DB_PASSWORD
+    # env var (e.g. DB_PASSWORD=secret ./mvnw spring-boot:run) or an untracked
+    # application-local.yml file.
+    password: "${DB_PASSWORD:}"
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      # 'update' lets the app boot even before sql/schema.sql is executed.
+      # Switch to 'none' after you have initialised the database with sql/schema.sql.
+      ddl-auto: update
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  jackson:
+    default-property-inclusion: non_null
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# ---------------------------------------------------------------------------
+# Application specific settings
+# ---------------------------------------------------------------------------
+app:
+  jwt:
+    # Base64 free secret, must be at least 32 bytes for HS256
+    secret: ${JWT_SECRET:online-education-platform-jwt-secret-key-2026-please-change-me}
+    expire-minutes: 1440            # 24 hours
+    issuer: online-education-platform
+  # Insert demo accounts / courses / quizzes on startup when the tables are empty
+  init-demo-data: ${INIT_DEMO_DATA:true}
+  cors:
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173
+
+logging:
+  level:
+    root: INFO
+    com.edu.platform: INFO
+    org.hibernate.SQL: WARN

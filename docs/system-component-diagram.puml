@@ -1,0 +1,24 @@
+@startuml System_Component_Diagram_API
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram — API application
+
+Container_Boundary(api, "API application (Spring Boot)") {
+    Component(sec, "Security", "Spring HandlerInterceptor, JJWT", "AuthInterceptor verifies the Bearer token and fills UserContext; requireAdmin() throws 403 for a STUDENT.")
+    Component(ctrl, "REST controllers", "Spring MVC", "10 controllers over /api/**. Thin: validate, delegate, wrap in the Result envelope. GlobalExceptionHandler maps BizException and validation errors.")
+    Component(svc, "Domain services", "Spring @Service", "7 services holding every business rule: auth, course, enrollment, studyPlan, quiz, recommendation, dashboard. Map entities to DTOs with DtoMapper.")
+    Component(repo, "Repositories", "Spring Data JPA", "12 interfaces over 12 JPA entities, talking to MySQL through a HikariCP pool (5-20 connections).")
+
+    Rel(sec, ctrl, "guards, then hands the caller over")
+    Rel(ctrl, svc, "calls")
+    Rel(svc, repo, "uses")
+}
+
+Container(spa, "Frontend SPA", "Vue 3, Vite, Pinia", "Calls the API with JSON over HTTP.")
+ContainerDb(db, "Database", "MySQL 8", "Schema online_education, 12 tables.")
+
+Rel(spa, sec, "calls", "JSON over HTTP /api")
+Rel(repo, db, "reads and writes", "JDBC / JPA, TCP 3306")
+
+UpdateLayoutConfig($c4ShapeInRow="1", $c4BoundaryInRow="1")
+@enduml

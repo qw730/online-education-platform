@@ -1,0 +1,61 @@
+<svg viewBox="0 0 680 584" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Component diagram for the API application of the Online Personal Education Platform</title>
+<desc>Inside the API application container, four components form a linear request path: the security component with the JWT interceptor, ten REST controllers, seven domain services and twelve Spring Data JPA repositories. The SPA calls the API with JSON over HTTP and the repositories talk to MySQL over JDBC.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<text x="40" y="34" font-size="15" font-weight="500" fill="#2C2C2A">Component diagram</text>
+<text x="40" y="54" font-size="13" fill="#5F5E5A">Online Personal Education Platform · API application · C4 level 3</text>
+
+<rect x="36" y="130" width="120" height="76" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="96" y="158" font-size="12.5" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#04342C">Frontend SPA</text>
+<text x="96" y="178" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">Vue 3 SPA · :5173</text>
+
+<rect x="190" y="88" width="272" height="432" rx="20" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="326" y="112" font-size="12.5" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#042C53">API application (Spring Boot)</text>
+
+<rect x="208" y="132" width="236" height="72" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="326" y="151" font-size="13" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#042C53">Security</text>
+<text x="326" y="169" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">AuthInterceptor · JwtUtil · UserContext</text>
+<text x="326" y="185" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">JWT verify · ADMIN gate · 6 public paths</text>
+
+<path d="M326 204 L326 228" fill="none" stroke="#185FA5" stroke-width="1" marker-end="url(#arrow)"/>
+<text x="334" y="216" font-size="11" fill="#185FA5">guards</text>
+
+<rect x="208" y="230" width="236" height="72" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="326" y="249" font-size="13" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#042C53">REST controllers</text>
+<text x="326" y="267" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">10 controllers · Result envelope</text>
+<text x="326" y="283" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">GlobalExceptionHandler · validation</text>
+
+<path d="M326 302 L326 326" fill="none" stroke="#185FA5" stroke-width="1" marker-end="url(#arrow)"/>
+<text x="334" y="314" font-size="11" fill="#185FA5">calls</text>
+
+<rect x="208" y="328" width="236" height="72" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="326" y="347" font-size="13" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#042C53">Domain services</text>
+<text x="326" y="365" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">7 services · DtoMapper</text>
+<text x="326" y="381" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">auth · catalogue · learning · quiz · recs</text>
+
+<path d="M326 400 L326 424" fill="none" stroke="#185FA5" stroke-width="1" marker-end="url(#arrow)"/>
+<text x="334" y="412" font-size="11" fill="#185FA5">uses</text>
+
+<rect x="208" y="426" width="236" height="72" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="326" y="445" font-size="13" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#042C53">Repositories</text>
+<text x="326" y="463" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">12 Spring Data JPA interfaces</text>
+<text x="326" y="479" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#185FA5">12 JPA entities · HikariCP pool</text>
+
+<path d="M156 168 L188 168" fill="none" stroke="#0F6E56" stroke-width="1" marker-end="url(#arrow)"/>
+<text x="172" y="160" font-size="11" text-anchor="middle" fill="#0F6E56">calls</text>
+
+<rect x="500" y="424" width="140" height="76" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="570" y="452" font-size="12.5" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#04342C">MySQL 8</text>
+<text x="570" y="472" font-size="11" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">online_education</text>
+
+<path d="M462 462 L498 462" fill="none" stroke="#0F6E56" stroke-width="1" marker-end="url(#arrow)"/>
+<text x="480" y="454" font-size="11" text-anchor="middle" fill="#0F6E56">JDBC</text>
+
+<text x="40" y="546" font-size="11" fill="#5F5E5A">Every call flows SPA → AuthInterceptor → controller → service → repository → MySQL.</text>
+<text x="40" y="564" font-size="11" fill="#5F5E5A">Only 6 paths bypass the interceptor; /api/admin/** additionally requires the ADMIN role.</text>
+</svg>

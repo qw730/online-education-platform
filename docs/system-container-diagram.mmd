@@ -1,0 +1,25 @@
+flowchart TB
+    student["Student<br/><i>Role.STUDENT</i><br/>learns and enrols"]
+    admin["Administrator<br/><i>Role.ADMIN</i><br/>authors and manages"]
+    browser["Web browser<br/>runs the SPA"]
+
+    subgraph platform["Online Personal Education Platform"]
+        direction TB
+        spa["Web application (SPA)<br/>Vue 3 · Vite · Pinia · Element Plus<br/>22 views · :5173 · JWT in localStorage"]
+        api["API application<br/>Spring Boot 3.3 · Spring Data JPA · JJWT<br/>10 controllers · 7 services · 12 entities"]
+        db[("Database<br/>MySQL 8 · online_education<br/>12 InnoDB · utf8mb4 tables")]
+        spa -->|"JSON / HTTP"| api
+        api -->|"JDBC"| db
+    end
+
+    student -->|"uses"| platform
+    admin -->|"uses"| platform
+    browser -->|"hosts"| platform
+
+    classDef person fill:#F1EFE8,stroke:#888780,color:#2C2C2A
+    classDef container fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    classDef external fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+
+    class student,admin person
+    class spa,api,db container
+    class browser external

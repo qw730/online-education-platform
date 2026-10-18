@@ -1,0 +1,24 @@
+flowchart TB
+    spa["Frontend SPA<br/>Vue 3 SPA · :5173"]
+
+    subgraph api["API application (Spring Boot)"]
+        direction TB
+        sec["Security<br/>AuthInterceptor · JwtUtil · UserContext<br/>JWT verify · ADMIN gate · 6 public paths"]
+        ctrl["REST controllers<br/>10 controllers · Result envelope<br/>GlobalExceptionHandler · validation"]
+        svc["Domain services<br/>7 services · DtoMapper<br/>auth · catalogue · learning · quiz · recs"]
+        repo["Repositories<br/>12 Spring Data JPA interfaces<br/>12 JPA entities · HikariCP pool"]
+        sec -->|"guards"| ctrl
+        ctrl -->|"calls"| svc
+        svc -->|"uses"| repo
+    end
+
+    db[("MySQL 8<br/>online_education")]
+
+    spa -->|"calls"| api
+    api -->|"JDBC"| db
+
+    classDef container fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    classDef external fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+
+    class sec,ctrl,svc,repo container
+    class spa,db external

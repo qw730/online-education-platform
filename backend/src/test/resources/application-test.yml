@@ -1,0 +1,31 @@
+# Configuration used by the integration tests only.
+# It swaps MySQL for an in-memory H2 database so the whole API can be exercised
+# without a running MySQL server.
+spring:
+  datasource:
+    url: jdbc:h2:mem:edu_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+app:
+  init-demo-data: true
+  jwt:
+    secret: integration-test-secret-key-must-be-at-least-32-bytes-long
+    expire-minutes: 60
+    issuer: online-education-platform
+  cors:
+    allowed-origins: http://localhost:5173
+
+logging:
+  level:
+    root: WARN
+    com.edu.platform: INFO
+    org.hibernate.SQL: WARN

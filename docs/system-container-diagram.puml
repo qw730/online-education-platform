@@ -1,0 +1,28 @@
+@startuml System_Container_Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram — Online Personal Education Platform
+
+Person(student, "Student", "Role.STUDENT. Registers, browses, enrols, studies, takes quizzes.")
+Person(admin, "Administrator", "Role.ADMIN. Authors courses, chapters, quizzes and categories.")
+
+System_Boundary(platform, "Online Personal Education Platform") {
+    Container(spa, "Web application (SPA)", "Vue 3, Vite, Pinia, Element Plus", "22 views. Runs in the browser on :5173. JWT kept in localStorage by the axios client.")
+    Container(api, "API application", "Spring Boot 3.3, Spring Data JPA, JJWT, BCrypt", "REST API on :8080. 10 controllers, 7 services, 12 repositories, 12 entities. Guarded by AuthInterceptor + UserContext.")
+    ContainerDb(db, "Database", "MySQL 8, InnoDB, utf8mb4", "Schema online_education, 12 tables.")
+    Rel(spa, api, "Calls REST endpoints", "JSON over HTTP /api")
+    Rel(api, db, "Reads and writes entities", "JDBC / JPA, TCP 3306")
+}
+
+System_Ext(browser, "Web browser", "Runs the single page application.")
+
+Rel(student, platform, "uses", "HTTPS")
+Rel(admin, platform, "uses", "HTTPS")
+Rel(browser, platform, "hosts")
+
+' Deployment: the SPA ships as static Vite assets, the API as a Spring Boot jar — two processes on one machine.
+' Build-time only: Maven Central, npm registry. Test scope only: H2 in-memory.
+' No cache, broker, search engine or external identity provider.
+
+UpdateLayoutConfig($c4ShapeInRow="1", $c4BoundaryInRow="1")
+@enduml
