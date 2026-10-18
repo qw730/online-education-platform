@@ -1,0 +1,111 @@
+name: Release
+
+# Publishing a tag such as v1.0.0 builds both sides, zips the frontend bundle
+# together with the SQL schema and creates a GitHub Release with the artifacts
+# attached. Tags are what trigger a release, so main never publishes by accident.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v1.0.0 (must not exist yet)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  JAVA_VERSION: "17"
+  NODE_VERSION: "20"
+
+jobs:
+  build:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build backend (with tests)
+        working-directory: backend
+        run: mvn -B -ntp --no-transfer-progress package
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Collect artifacts
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          mkdir -p release
+          cp backend/target/online-education-platform.jar \
+             "release/online-education-platform-${TAG}.jar"
+          # Ship the static bundle with the schema so it can be deployed on its own.
+          cp sql/schema.sql frontend/dist/
+          (cd frontend/dist && zip -r -q "../../release/frontend-dist-${TAG}.zip" .)
+          ls -lh release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release/*
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release
+
+      - name: Resolve release tag
+        id: meta
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "name=Online Education Platform ${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.name }}
+          # A tag that did not exist yet (manual dispatch) gets created here.
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: release/*
+          fail_on_unmatched_files: true
