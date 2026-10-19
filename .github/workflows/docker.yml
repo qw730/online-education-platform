@@ -33,6 +33,8 @@ jobs:
       # Alibaba Cloud personal registries only authenticate over plain HTTP, but
       # the registry itself is reached over HTTPS. Log in with the values stored
       # in the WORK1 (user name) and WORK2 (password) repository secrets.
+      # The checks below catch the two most common mistakes (empty or swapped
+      # secrets) before the build spends several minutes.
       - name: Validate registry credentials
         env:
           REGISTRY_USERNAME: ${{ secrets.WORK1 }}
@@ -40,7 +42,15 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${REGISTRY_USERNAME:-}" ] || [ -z "${REGISTRY_PASSWORD:-}" ]; then
-            echo "::error::Repository secrets WORK1 / WORK2 are empty. Add the Alibaba Cloud registry user name to WORK1 and the fixed password to WORK2."
+            echo "::error::Repository secrets WORK1 / WORK2 are empty. Put the Alibaba Cloud registry user name in WORK1 and the fixed password in WORK2."
+            exit 1
+          fi
+          if [[ "${REGISTRY_USERNAME}" =~ ^https?:// || "${REGISTRY_USERNAME}" == *@* || "${REGISTRY_USERNAME}" == *:* ]]; then
+            echo "::error::WORK1 does not look like a registry user name (it looks like a URL or an email address)."
+            exit 1
+          fi
+          if [[ "${REGISTRY_PASSWORD}" =~ ^(ghp_|gho_|ghs_|github_pat_) ]]; then
+            echo "::error::WORK2 contains a GitHub token, not the Alibaba Cloud registry password."
             exit 1
           fi
           echo "Credentials present for user '${REGISTRY_USERNAME}'."
