@@ -326,6 +326,40 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
+### Container image
+
+`docker.yml` builds a **single image** that serves the Vue bundle from Nginx on port 80
+and runs the Spring Boot backend inside the same container, with `/api` reverse proxied
+to it. Every push to `main` publishes `latest` and `sha-<short>` tags to the Alibaba
+Cloud personal registry; a `v*.*.*` tag additionally publishes the version tags.
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `DB_URL` | `jdbc:sqlite:/data/oep.db` | JDBC URL; point it at MySQL to use a real server |
+| `DB_DRIVER` | `org.sqlite.JDBC` | JDBC driver class |
+| `JPA_DIALECT` | `org.hibernate.community.dialect.SQLiteDialect` | Hibernate dialect |
+| `JPA_DDL_AUTO` | `update` | `update`, `create-drop` or `none` |
+| `JWT_SECRET` | built-in dev value | **override in production** |
+| `INIT_DEMO_DATA` | `true` | seed the demo accounts and courses on an empty database |
+
+SQLite keeps the image self-contained (no database server required) and the file lives
+in `/data`, so mount a volume to keep data across container restarts:
+
+```bash
+docker pull crpi-p691mviekbc8084h.cn-hangzhou.personal.cr.aliyuncs.com/place12345/work1:latest
+docker run -d --name oep -p 80:80 \
+  -v oep-data:/data \
+  -e JWT_SECRET=change-me-please-32-bytes-minimum \
+  crpi-p691mviekbc8084h.cn-hangzhou.personal.cr.aliyuncs.com/place12345/work1:latest
+```
+
+Then open `http://localhost`. To use MySQL instead of SQLite, pass `DB_DRIVER`,
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD` and `JPA_DIALECT` as shown in the table above.
+
+Pushing the image requires the repository secrets `WORK1` (registry user name) and
+`WORK2` (registry password). Alibaba Cloud shows these values under *Container Registry
+Console → Personal instance → Access credentials*.
+
 ---
 
 ## 6. REST API

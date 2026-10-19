@@ -1,0 +1,102 @@
+name: Docker Image
+
+# Builds the single frontend + backend image and pushes it to the Alibaba Cloud
+# personal container registry. No server is required: the image is the deliverable,
+# so it can be pulled later with `docker run` wherever a host exists.
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: crpi-p691mviekbc8084h.cn-hangzhou.personal.cr.aliyuncs.com
+  IMAGE_NAME: crpi-p691mviekbc8084h.cn-hangzhou.personal.cr.aliyuncs.com/place12345/work1
+  PLATFORMS: linux/amd64
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    name: Build & push image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Alibaba Cloud personal registries only authenticate over plain HTTP, but
+      # the registry itself is reached over HTTPS. Log in with the values stored
+      # in the WORK1 (user name) and WORK2 (password) repository secrets.
+      - name: Validate registry credentials
+        env:
+          REGISTRY_USERNAME: ${{ secrets.WORK1 }}
+          REGISTRY_PASSWORD: ${{ secrets.WORK2 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${REGISTRY_USERNAME:-}" ] || [ -z "${REGISTRY_PASSWORD:-}" ]; then
+            echo "::error::Repository secrets WORK1 / WORK2 are empty. Add the Alibaba Cloud registry user name to WORK1 and the fixed password to WORK2."
+            exit 1
+          fi
+          echo "Credentials present for user '${REGISTRY_USERNAME}'."
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Alibaba Cloud registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.WORK1 }}
+          password: ${{ secrets.WORK2 }}
+
+      - name: Derive image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          # Every build gets an immutable commit tag plus `latest`; releases also
+          # get the git tag (v1.0.0) and rolling major/minor tags.
+          tags: |
+            type=sha,format=short,prefix=sha-
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=Online Education Platform
+            org.opencontainers.image.description=Vue 3 frontend and Spring Boot backend in a single image
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Summarize
+        run: |
+          {
+            echo "### Image published"
+            echo ""
+            echo "| Registry | Tags |"
+            echo "| --- | --- |"
+            echo "| \`${{ env.IMAGE_NAME }}\` | $(echo '${{ steps.meta.outputs.tags }}' | tr '\n' '<br>') |"
+            echo ""
+            echo "Pull with:"
+            echo '```bash'
+            echo "docker pull ${{ env.IMAGE_NAME }}:latest"
+            echo "docker run -d --name oep -p 80:80 ${{ env.IMAGE_NAME }}:latest"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
