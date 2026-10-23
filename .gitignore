@@ -27,3 +27,6 @@ Thumbs.db
 application-local.yml
 .env
 .env.local
+
+# ---- Local runtime logs ----
+data/
