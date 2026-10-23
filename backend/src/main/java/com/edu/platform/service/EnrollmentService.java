@@ -75,10 +75,10 @@ public class EnrollmentService {
         }
         Enrollment saved = enrollmentRepository.save(enrollment);
 
-        if (isNew) {
-            course.setStudentCount(course.getStudentCount() == null ? 1 : course.getStudentCount() + 1);
-            courseRepository.save(course);
-        }
+        // Keep the denormalised counter exactly in sync with the real number of enrolments.
+        course.setStudentCount((int) enrollmentRepository.countByCourseIdAndStatusNot(courseId,
+                EnrollmentStatus.DROPPED));
+        courseRepository.save(course);
         return toVO(saved);
     }
 
@@ -90,8 +90,9 @@ public class EnrollmentService {
         enrollmentRepository.save(enrollment);
 
         Course course = courseRepository.findById(courseId).orElse(null);
-        if (course != null && course.getStudentCount() != null && course.getStudentCount() > 0) {
-            course.setStudentCount(course.getStudentCount() - 1);
+        if (course != null) {
+            course.setStudentCount((int) enrollmentRepository.countByCourseIdAndStatusNot(courseId,
+                    EnrollmentStatus.DROPPED));
             courseRepository.save(course);
         }
     }

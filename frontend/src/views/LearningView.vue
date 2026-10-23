@@ -38,7 +38,7 @@
           </div>
 
           <div v-if="progress.lessons.length" class="lesson-list">
-            <div v-for="(lesson, index) in progress.lessons" :key="lesson.id" class="lesson"
+            <div v-for="(lesson, index) in progress.lessons" :key="lesson.lessonId" class="lesson"
                  :class="{ done: lesson.completed }">
               <el-checkbox :model-value="lesson.completed" :disabled="saving"
                            @change="(value) => toggle(lesson, value)" />
@@ -167,7 +167,7 @@ async function load() {
 async function toggle(lesson, value) {
   saving.value = true
   try {
-    progress.value = await learningApi.toggleLesson(lesson.id, {
+    progress.value = await learningApi.toggleLesson(lesson.lessonId, {
       completed: value,
       watchedMinutes: value ? lesson.durationMinutes : 0
     })

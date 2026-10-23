@@ -13,6 +13,7 @@ import com.edu.platform.dto.LearningDtos;
 import com.edu.platform.dto.QuizDtos;
 import com.edu.platform.repository.CategoryRepository;
 import com.edu.platform.repository.CourseRepository;
+import com.edu.platform.repository.EnrollmentRepository;
 import com.edu.platform.repository.LessonRepository;
 import com.edu.platform.repository.QuestionRepository;
 import com.edu.platform.repository.QuizAttemptRepository;
@@ -38,6 +39,7 @@ public class DtoMapper {
 
     private final CategoryRepository categoryRepository;
     private final CourseRepository courseRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final LessonRepository lessonRepository;
     private final QuestionRepository questionRepository;
     private final QuizAttemptRepository quizAttemptRepository;
@@ -63,15 +65,30 @@ public class DtoMapper {
                 courses.stream().map(Course::getCategoryId).filter(Objects::nonNull).collect(Collectors.toSet()));
         Map<Long, Long> lessonCounts = lessonCountMap(
                 courses.stream().map(Course::getId).collect(Collectors.toList()));
+        Map<Long, Long> studentCounts = activeStudentCountMap(
+                courses.stream().map(Course::getId).collect(Collectors.toList()));
 
         return courses.stream()
                 .map(c -> new CourseDtos.CourseVO(
                         c.getId(), c.getTitle(), c.getSubtitle(), c.getCoverUrl(),
                         c.getCategoryId(), categoryNames.get(c.getCategoryId()),
                         c.getTeacherName(), c.getLevel(), c.getPrice(), c.getDurationHours(),
-                        c.getTags(), c.getStatus(), c.getStudentCount(), c.getRating(),
+                        c.getTags(), c.getStatus(),
+                        studentCounts.getOrDefault(c.getId(), 0L).intValue(), c.getRating(),
                         lessonCounts.getOrDefault(c.getId(), 0L).intValue(), c.getCreatedAt()))
                 .toList();
+    }
+
+    /** Real number of active (non-dropped) enrolments per course, so the UI never shows fake numbers. */
+    private Map<Long, Long> activeStudentCountMap(Collection<Long> courseIds) {
+        if (courseIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Long, Long> map = new HashMap<>();
+        for (Object[] row : enrollmentRepository.countActiveGroupByCourseIds(courseIds)) {
+            map.put((Long) row[0], ((Number) row[1]).longValue());
+        }
+        return map;
     }
 
     public CourseDtos.LessonVO toLessonVO(Lesson lesson) {
