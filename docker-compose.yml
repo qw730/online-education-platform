@@ -1,0 +1,84 @@
+# ---------------------------------------------------------------------------
+# Three-tier containerised deployment: database + backend + frontend.
+#
+#   docker compose up -d          # start everything
+#   docker compose ps             # check status
+#   docker compose logs -f backend
+#   docker compose down           # stop (add -v to wipe the database volume)
+#
+# The app is then served at http://localhost:80 (frontend) which proxies
+# /api to the backend container; MySQL is reachable only inside the network.
+# ---------------------------------------------------------------------------
+name: online-education-platform
+
+services:
+  # ---------------------------------------------------------------- database
+  db:
+    image: mysql:8.0
+    container_name: oep-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-oep-root-pass}
+      MYSQL_DATABASE: online_education
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      # Persist data across container rebuilds.
+      - mysql-data:/var/lib/mysql
+      # Runs once on the first start (empty volume): creates schema + tables.
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-oep-root-pass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [oep-net]
+    # Not published to the host on purpose: only backend talks to the database.
+
+  # ----------------------------------------------------------------- backend
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: crpi-p691mviekbc8084h.cn-hangzhou.personal.cr.aliyuncs.com/place12345/work1-backend:latest
+    container_name: oep-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      DB_URL: jdbc:mysql://db:3306/online_education?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-oep-root-pass}
+      JPA_DDL_AUTO: update          # first boot creates tables; switch to none later
+      JPA_DIALECT: org.hibernate.dialect.MySQLDialect
+      INIT_DEMO_DATA: "true"        # seeds demo accounts/courses when tables are empty
+      JWT_SECRET: ${JWT_SECRET:-online-education-platform-jwt-secret-key-2026-please-change-me}
+    networks: [oep-net]
+    # Backend is not exposed to the host either; the frontend proxies /api.
+
+  # ---------------------------------------------------------------- frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: crpi-p691mviekbc8084h.cn-hangzhou.personal.cr.aliyuncs.com/place12345/work1-frontend:latest
+    container_name: oep-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"                     # the only public entry point
+    networks: [oep-net]
+
+networks:
+  oep-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
